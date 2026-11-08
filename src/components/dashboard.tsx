@@ -1,8 +1,9 @@
 'use client';
 import dynamic from 'next/dynamic';
 import Link from 'next/link';
-import { useQuery, useQueryClient } from '@tanstack/react-query';
+import { useQuery } from '@tanstack/react-query';
 import { useDeferredValue, useEffect, useRef, useState } from 'react';
+import { z } from 'zod';
 import {
   ArrowRight,
   ArrowUpRight,
@@ -50,19 +51,9 @@ const statusText = {
   STALE: 'Signal lost',
 };
 export function Dashboard({ view }: { view: View }) {
-  const client = useQueryClient();
   const fleet = useQuery({
     queryKey: ['fleet'],
     queryFn: () => fetchJson<FleetResponse>('/api/buses'),
-    refetchInterval: 3000,
-  });
-  const subscriptionsQuery = useQuery({
-    queryKey: ['subscriptions'],
-    queryFn: () => fetchJson<{ stopIds: string[] }>('/api/subscriptions'),
-  });
-  const alertsQuery = useQuery({
-    queryKey: ['notifications'],
-    queryFn: () => fetchJson<{ notifications: AlertInfo[] }>('/api/notifications'),
     refetchInterval: 3000,
   });
   const [selectedId, setSelectedId] = useState('BUS001');
@@ -76,6 +67,7 @@ export function Dashboard({ view }: { view: View }) {
   const [alertDialog, setAlertDialog] = useState(false);
   const [demoSubscriptions, setDemoSubscriptions] = useState<string[]>([]);
   const [demoAlerts, setDemoAlerts] = useState<AlertInfo[]>([]);
+  const [localAlertsReady, setLocalAlertsReady] = useState(false);
   const [toast, setToast] = useState('');
   const [pendingAlert, setPendingAlert] = useState(false);
   const notified = useRef(new Set<string>());
@@ -97,7 +89,23 @@ export function Dashboard({ view }: { view: View }) {
     } catch {
       localStorage.removeItem('campusride-subscriptions');
     }
+    try {
+      const stored = z.array(z.object({
+        id: z.string(), message: z.string(), read: z.boolean(), createdAt: z.iso.datetime(),
+      })).safeParse(JSON.parse(localStorage.getItem('buspulse-arrival-alerts') ?? '[]'));
+      if (stored.success) {
+        const alerts = stored.data.slice(0, 50);
+        setDemoAlerts(alerts);
+        notified.current = new Set(alerts.map((alert) => alert.id));
+      }
+    } catch {
+      localStorage.removeItem('buspulse-arrival-alerts');
+    }
+    setLocalAlertsReady(true);
   }, []);
+  useEffect(() => {
+    if (localAlertsReady) localStorage.setItem('buspulse-arrival-alerts', JSON.stringify(demoAlerts));
+  }, [demoAlerts, localAlertsReady]);
   useEffect(() => {
     if (!toast) return;
     const timeout = setTimeout(() => setToast(''), 4500);
@@ -111,8 +119,8 @@ export function Dashboard({ view }: { view: View }) {
     : (selected?.route.stops.at(-1)?.id ?? '');
   const selectedStop = selected?.route.stops.find((stop) => stop.id === effectiveStopId);
   const eta = selectedStop && selected ? etaMinutes(selected.location, selectedStop) : null;
-  const subscriptions = demo ? demoSubscriptions : (subscriptionsQuery.data?.stopIds ?? []);
-  const notifications = demo ? demoAlerts : (alertsQuery.data?.notifications ?? []);
+  const subscriptions = demoSubscriptions;
+  const notifications = demoAlerts;
   const routes = Array.from(new Map(buses.map((bus) => [bus.route.id, bus.route])).values());
   const activeBuses = buses.filter((bus) => bus.status !== 'INACTIVE');
   const filtered = buses.filter(
@@ -126,12 +134,13 @@ export function Dashboard({ view }: { view: View }) {
       (routeFilter === 'all' || bus.route.id === routeFilter),
   );
   useEffect(() => {
-    if (!fleet.data?.demo) return;
+    if (!fleet.data || !localAlertsReady) return;
     const additions: AlertInfo[] = [];
     for (const bus of fleet.data.buses)
       for (const stop of bus.route.stops) {
         if (
           !bus.location ||
+          Date.now() - Date.parse(bus.location.updatedAt) > 30_000 ||
           !demoSubscriptions.includes(stop.id) ||
           !stopProximity(bus.location, stop).notify
         )
@@ -144,8 +153,8 @@ export function Dashboard({ view }: { view: View }) {
         if ('Notification' in window && Notification.permission === 'granted')
           new Notification('IIIT BusPulse · Arrival alert', { body: message });
       }
-    if (additions.length) setDemoAlerts((current) => [...additions, ...current]);
-  }, [fleet.data, demoSubscriptions]);
+    if (additions.length) setDemoAlerts((current) => [...additions, ...current].slice(0, 50));
+  }, [fleet.data, demoSubscriptions, localAlertsReady]);
   function selectBus(id: string) {
     setSelectedId(id);
     const bus = buses.find((bus) => bus.id === id);
@@ -157,22 +166,13 @@ export function Dashboard({ view }: { view: View }) {
     const enabled = !subscriptions.includes(id);
     setPendingAlert(true);
     try {
-      if (enabled && demo && 'Notification' in window && Notification.permission === 'default')
+      if (enabled && 'Notification' in window && Notification.permission === 'default')
         await Notification.requestPermission();
-      if (demo) {
-        const next = enabled
-          ? [...demoSubscriptions, id]
-          : demoSubscriptions.filter((stop) => stop !== id);
-        setDemoSubscriptions(next);
-        localStorage.setItem('campusride-subscriptions', JSON.stringify(next));
-      } else {
-        await fetchJson('/api/subscriptions', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ stopId: id, enabled }),
-        });
-        await client.invalidateQueries({ queryKey: ['subscriptions'] });
-      }
+      const next = enabled
+        ? [...demoSubscriptions, id]
+        : demoSubscriptions.filter((stop) => stop !== id);
+      setDemoSubscriptions(next);
+      localStorage.setItem('campusride-subscriptions', JSON.stringify(next));
       setToast(enabled ? 'Arrival alert enabled for your stop.' : 'Arrival alert removed.');
       setAlertDialog(false);
     } catch (error) {
@@ -254,9 +254,6 @@ export function Dashboard({ view }: { view: View }) {
             <RefreshCw size={14} />
             Retry
           </Button>
-          <Link href="/login">
-            Sign in <ArrowRight size={14} />
-          </Link>
         </div>
       )}
       <section className="stats-grid" aria-label="Transport overview">
@@ -762,12 +759,10 @@ export function Dashboard({ view }: { view: View }) {
                 <span>Choose a stop to receive arrival updates.</span>
               </div>
             )}
-            {demo && (
-              <p className="demo-alert-note">
-                <Info size={14} />
-                Demo subscriptions stay in this browser. Keep the app open for alerts.
-              </p>
-            )}
+            <p className="demo-alert-note">
+              <Info size={14} />
+              Subscriptions stay in this browser. Keep the app open for alerts.
+            </p>
           </section>
           <section className="data-section">
             <div className="section-heading">
@@ -775,16 +770,7 @@ export function Dashboard({ view }: { view: View }) {
               <Button
                 variant="ghost"
                 size="sm"
-                onClick={async () => {
-                  if (demo)
-                    setDemoAlerts((items) => items.map((item) => ({ ...item, read: true })));
-                  else {
-                    await fetchJson('/api/notifications', { method: 'PATCH' }).catch((error) =>
-                      setToast(error.message),
-                    );
-                    client.invalidateQueries({ queryKey: ['notifications'] });
-                  }
-                }}
+                onClick={() => setDemoAlerts((items) => items.map((item) => ({ ...item, read: true })))}
                 disabled={!notifications.length}
               >
                 <Check size={15} />
@@ -855,7 +841,7 @@ export function Dashboard({ view }: { view: View }) {
               <BellRing size={22} />
               <span>
                 <strong>{selectedStop?.stopName ?? 'Select a stop'}</strong>
-                <small>{demo ? 'Browser alert · Demo mode' : 'In-app arrival notification'}</small>
+                <small>{demo ? 'Browser alert · Demo mode' : 'Browser arrival alert'}</small>
               </span>
               <span className="count-badge">1 km</span>
             </div>

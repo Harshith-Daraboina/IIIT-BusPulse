@@ -24,7 +24,7 @@ export default function LoginPage() {
       if (result?.error)
         setError('Unable to sign in. Check your credentials or contact the transport office.');
       else {
-        router.push('/');
+        router.push('/admin');
         router.refresh();
       }
     } catch {
@@ -46,11 +46,11 @@ export default function LoginPage() {
       <div className="login-layout">
         <section className="login-form-section">
           <span className="eyebrow">IIIT DHARWAD TRANSPORT</span>
-          <h1>Welcome aboard.</h1>
-          <p className="muted">Sign in with your college account.</p>
+          <h1>Admin sign in.</h1>
+          <p className="muted">Sign in to manage IIIT Dharwad transportation.</p>
           <form onSubmit={submit} className="login-form">
             <label>
-              College email
+              Admin email
               <div className="input-with-icon">
                 <Mail size={17} />
                 <input
@@ -94,7 +94,7 @@ export default function LoginPage() {
               <ArrowRight size={17} />
             </Button>
           </form>
-          <p className="login-contact">Need an account? Contact your college transport office.</p>
+          <p className="login-contact">Student bus tracking is public. No account is required.</p>
           <Link href="/" className="demo-login-link">
             Back to tracking
             <ArrowRight size={16} />

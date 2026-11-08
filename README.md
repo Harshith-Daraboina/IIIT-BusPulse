@@ -4,6 +4,8 @@
 
 The campus destination uses IIIT Dharwad's Ittigatti campus coordinates from OpenStreetMap. Routes remain demonstration data, not verified institutional routes. Branding changes do not rename existing seed accounts or authentication identifiers.
 
+Students can open tracking, routes, ETA, and trip history without signing in. Arrival subscriptions and messages stay in their browser, and require the app to remain open. Only the web admin console requires an ADMIN account; Android drivers still authenticate before starting trips or sending GPS. Admin authentication is not bypassed in demo mode.
+
 ## Run The Demonstration
 
 ```powershell

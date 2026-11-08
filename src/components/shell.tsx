@@ -102,8 +102,7 @@ export function Shell({
             </Link>
           ))}
         </nav>
-        {(demo || session?.user.role === 'ADMIN') && (
-          <>
+        <>
             <p className="nav-caption admin-caption">MANAGEMENT</p>
             <Link
               href="/admin"
@@ -113,8 +112,7 @@ export function Shell({
               Admin console
               <ArrowUpRight size={15} className="nav-end" />
             </Link>
-          </>
-        )}
+        </>
         <div className="sidebar-bottom">
           <div className="commute-art">
             <div className="commute-art-overlay">
@@ -152,7 +150,7 @@ export function Shell({
                 <LogOut size={17} />
               </button>
             ) : (
-              <Link href="/login" aria-label="Account" title="Sign in">
+              <Link href="/login" aria-label="Admin sign in" title="Admin sign in">
                 <ChevronDown size={16} />
               </Link>
             )}

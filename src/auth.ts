@@ -22,7 +22,7 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
         if (!input.success) return null;
         await rateLimit(`login:${input.data.email}`, 10, 900);
         const user = await db.user.findUnique({ where: { email: input.data.email } });
-        if (!user || !(await compare(input.data.password, user.password))) return null;
+        if (!user || user.role !== 'ADMIN' || !(await compare(input.data.password, user.password))) return null;
         return { id: user.id, name: user.name, email: user.email, role: user.role };
       },
     }),

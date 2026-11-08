@@ -1,11 +1,9 @@
 import { api } from '@/lib/http';
-import { requireRead } from '@/lib/access';
 import { db, isDemo } from '@/lib/db';
 import { demoHistory } from '@/lib/demo';
 import { z } from 'zod';
 export async function GET(request: Request) {
   return api(async () => {
-    await requireRead();
     const days = z.coerce
       .number()
       .pipe(z.union([z.literal(1), z.literal(7), z.literal(30)]))

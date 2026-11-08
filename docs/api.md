@@ -1,5 +1,11 @@
 # API Reference
 
+## Public Student Access
+
+`GET /api/buses`, `GET /api/eta`, and `GET /api/history` are public in real-service and demo modes. Student pages never require login. Their stop subscriptions, arrival messages, and read state are browser-local; alerts require the app to remain open. Existing subscription/notification database endpoints remain authenticated and must never expose another user's records.
+
+Web credential sign-in accepts ADMIN accounts only and opens `/admin`. Admin pages, records, analytics, and Server Actions stay role-protected, including demo-mode admin reads. Android driver JWT authentication and bus ownership checks are unchanged.
+
 All endpoints return JSON. Error bodies have `{ "error": "..." }`; Zod validation errors can also include `issues`. Authenticated reads are uncached. Device JWTs are only accepted by driver endpoints, not by student/admin APIs.
 
 | Endpoint                           | Method   | Access              | Purpose                                |

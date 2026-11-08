@@ -16,10 +16,6 @@ export async function requireUser(roles = ['STUDENT', 'ADMIN', 'DRIVER']) {
   return user;
 }
 
-export async function requireRead() {
-  if (!isDemo()) await requireUser();
-}
-
 export function jwtSecret() {
   const secret = process.env.DRIVER_JWT_SECRET;
   if (!secret || secret.length < 32)

@@ -3,6 +3,7 @@ import { requireUser } from './access';
 import { demoFleet, demoHistory, demoRoutes } from './demo';
 import { AdminData, AdminEntity, AdminRow, Analytics } from './admin-config';
 export async function getAdminData(entity: AdminEntity): Promise<AdminData> {
+  await requireUser(['ADMIN']);
   if (isDemo()) {
     const buses = demoFleet().map((bus) => ({
       id: bus.id,
@@ -63,7 +64,6 @@ export async function getAdminData(entity: AdminEntity): Promise<AdminData> {
       demo: true,
     };
   }
-  await requireUser(['ADMIN']);
   const [routes, buses, users] = await Promise.all([
     db.route.findMany({
       include: { _count: { select: { stops: true } } },
@@ -131,7 +131,7 @@ export async function getAdminData(entity: AdminEntity): Promise<AdminData> {
   return { rows, routes: routeRows, buses: busRows, users: userRows, demo: false };
 }
 export async function getAnalytics(): Promise<Analytics> {
-  if (!isDemo()) await requireUser(['ADMIN']);
+  await requireUser(['ADMIN']);
   const history = isDemo()
     ? demoHistory(30)
     : (
