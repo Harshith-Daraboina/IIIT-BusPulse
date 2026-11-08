@@ -1,0 +1,2 @@
+-keep class com.campusride.driver.data.** { *; }
+-keepattributes Signature,InnerClasses,EnclosingMethod
