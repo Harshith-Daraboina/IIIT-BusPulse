@@ -1,0 +1,140 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url = env("DATABASE_URL")
+  directUrl = env("DIRECT_URL")
+}
+
+enum Role {
+  ADMIN
+  DRIVER
+  STUDENT
+}
+
+enum TripStatus {
+  ACTIVE
+  COMPLETED
+}
+
+model User {
+  id String @id @default(cuid())
+  name String
+  email String @unique
+  password String
+  role Role @default(STUDENT)
+  createdAt DateTime @default(now())
+  driver Driver?
+  subscriptions Subscription[]
+  notifications Notification[]
+}
+
+model Driver {
+  id String @id
+  userId String @unique
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  licenseNumber String @unique
+  phone String
+  busId String? @unique
+  bus Bus? @relation(fields: [busId], references: [id])
+  trips Trip[]
+}
+
+model Bus {
+  id String @id
+  busNumber String @unique
+  vehicleNumber String @unique
+  capacity Int
+  routeId String
+  route Route @relation(fields: [routeId], references: [id])
+  driver Driver?
+  trips Trip[]
+}
+
+model Route {
+  id String @id @default(cuid())
+  name String
+  source String
+  destination String
+  color String @default("#007f66")
+  buses Bus[]
+  stops Stop[]
+}
+
+model Stop {
+  id String @id @default(cuid())
+  routeId String
+  route Route @relation(fields: [routeId], references: [id], onDelete: Cascade)
+  stopName String
+  latitude Float?
+  longitude Float?
+  sequenceNumber Int
+  subscriptions Subscription[]
+  arrivals StopArrival[]
+  @@unique([routeId, sequenceNumber])
+}
+
+model Trip {
+  id String @id @default(cuid())
+  busId String
+  bus Bus @relation(fields: [busId], references: [id])
+  driverId String
+  driver Driver @relation(fields: [driverId], references: [id])
+  startTime DateTime @default(now())
+  endTime DateTime?
+  status TripStatus @default(ACTIVE)
+  activeBusId String? @unique
+  activeDriverId String? @unique
+  lastHistoryAt DateTime?
+  locations LocationHistory[]
+  arrivals StopArrival[]
+  notifications Notification[]
+  @@index([busId, startTime])
+  @@index([status])
+}
+
+model LocationHistory {
+  id String @id @default(cuid())
+  tripId String
+  trip Trip @relation(fields: [tripId], references: [id], onDelete: Cascade)
+  latitude Float
+  longitude Float
+  speed Float
+  timestamp DateTime
+  @@index([tripId, timestamp])
+}
+
+model StopArrival {
+  id String @id @default(cuid())
+  tripId String
+  trip Trip @relation(fields: [tripId], references: [id], onDelete: Cascade)
+  stopId String
+  stop Stop @relation(fields: [stopId], references: [id], onDelete: Cascade)
+  arrivedAt DateTime @default(now())
+  @@unique([tripId, stopId])
+}
+
+model Subscription {
+  id String @id @default(cuid())
+  userId String
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  stopId String
+  stop Stop @relation(fields: [stopId], references: [id], onDelete: Cascade)
+  @@unique([userId, stopId])
+}
+
+model Notification {
+  id String @id @default(cuid())
+  userId String
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  tripId String
+  trip Trip @relation(fields: [tripId], references: [id], onDelete: Cascade)
+  stopId String
+  message String
+  read Boolean @default(false)
+  createdAt DateTime @default(now())
+  @@unique([userId, tripId, stopId])
+  @@index([userId, createdAt])
+}
