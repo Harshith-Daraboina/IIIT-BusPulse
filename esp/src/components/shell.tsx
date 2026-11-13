@@ -17,6 +17,7 @@ import {
   LogOut,
   HelpCircle,
   MapPin,
+  CalendarClock,
 } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { useSession, signOut } from 'next-auth/react';
@@ -25,6 +26,7 @@ import { Button } from './ui/button';
 const links = [
   { href: '/', label: 'Live tracking', icon: Radio },
   { href: '/routes', label: 'Bus routes', icon: Route },
+  { href: '/schedule', label: 'Schedule', icon: CalendarClock },
   { href: '/history', label: 'Trip history', icon: History },
   { href: '/alerts', label: 'Arrival alerts', icon: Bell },
 ];

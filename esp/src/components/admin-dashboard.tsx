@@ -545,7 +545,7 @@ export function AdminDashboard({ view }: { view: AdminEntity | 'overview' | 'his
                     defaultValue={
                       field.key === 'password'
                         ? ''
-                        : String(editing?.[field.key] ?? (field.type === 'color' ? '#00876c' : ''))
+                        : String(editing?.[field.key] ?? (field.type === 'color' ? '#5e1ef4' : ''))
                     }
                     required={field.required || (field.key === 'password' && !editing)}
                     min={field.min}

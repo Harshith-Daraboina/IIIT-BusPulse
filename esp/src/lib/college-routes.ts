@@ -36,5 +36,5 @@ function route(
 
 // Hostel and intermediate-stop pins remain unset until their locations are verified.
 export const collegeRoutes: RouteInfo[] = [
-  route('R02', 'campus', 'transit', ['shivaji'], '#2864ea'),
+  route('R02', 'campus', 'transit', ['shivaji'], '#5e1ef4'),
 ];
