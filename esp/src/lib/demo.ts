@@ -28,6 +28,7 @@ export function demoFleet(): BusInfo[] {
       busNumber: String(index + 1).padStart(2, '0'),
       vehicleNumber: `KA 25 ${['AB', 'CD', 'EF', 'GH', 'JK', 'LM'][index]} ${1234 + index * 111}`,
       capacity: 48,
+      passengerCount: location ? 18 + index * 5 : null,
       route,
       driverName: [
         'Ramesh Patil',
@@ -58,6 +59,7 @@ export function demoHistory(days: number): HistoryItem[] {
       startTime: start.toISOString(),
       endTime: new Date(start.getTime() + (32 + (index % 15)) * 60_000).toISOString(),
       status: 'COMPLETED',
+      distanceKm: 9 + (index % 5) * 1.4,
     };
   });
 }

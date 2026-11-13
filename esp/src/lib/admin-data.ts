@@ -183,10 +183,13 @@ export async function getAnalytics(): Promise<Analytics> {
     })),
     drivers: driverNames.map((name) => {
       const trips = valid.filter((trip) => trip.driverName === name);
+      const minutes = trips.reduce((sum, trip) => sum + duration(trip), 0);
       return {
         name,
         trips: trips.length,
-        average: Math.round(trips.reduce((sum, trip) => sum + duration(trip), 0) / trips.length),
+        average: Math.round(minutes / trips.length),
+        hours: Math.round((minutes / 60) * 10) / 10,
+        km: Math.round(trips.reduce((sum, trip) => sum + (trip.distanceKm ?? 0), 0) * 10) / 10,
       };
     }),
     daily: Array.from({ length: 7 }, (_, index) => {

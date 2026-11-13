@@ -3,7 +3,7 @@ import { requireDriver } from '@/lib/access';
 import { db } from '@/lib/db';
 import { redis, withBusLock } from '@/lib/redis';
 import { locationSchema } from '@/lib/schemas';
-import { stopProximity } from '@/lib/geo';
+import { distanceKm, stopProximity } from '@/lib/geo';
 import { LiveLocation } from '@/lib/types';
 
 export async function POST(request: Request) {
@@ -32,6 +32,17 @@ export async function POST(request: Request) {
       };
       // The conditional update claims a sampling slot before history is persisted.
       await db.$transaction(async (transaction) => {
+        // Skip jitter under 5 m, long gaps (app paused), and impossible jumps.
+        const gapSeconds = cached ? (timestamp.getTime() - Date.parse(cached.updatedAt)) / 1000 : 0;
+        const moved =
+          cached?.tripId === trip.id && gapSeconds > 0 && gapSeconds <= 300
+            ? distanceKm(cached.latitude, cached.longitude, input.latitude, input.longitude)
+            : 0;
+        if (moved >= 0.005 && moved / gapSeconds <= 160 / 3600)
+          await transaction.trip.update({
+            where: { id: trip.id },
+            data: { distanceKm: { increment: moved } },
+          });
         const sampled = await transaction.trip.updateMany({
           where: {
             id: trip.id,

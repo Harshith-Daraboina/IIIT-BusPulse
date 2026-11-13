@@ -82,7 +82,7 @@ export default function BusMap({
         id: 'route-line',
         type: 'line',
         source: 'route',
-        paint: { 'line-color': '#5e1ef4', 'line-width': 4 },
+        paint: { 'line-color': '#25408f', 'line-width': 4 },
         layout: { 'line-join': 'round', 'line-cap': 'round' },
       });
       const campus = document.createElement('div');

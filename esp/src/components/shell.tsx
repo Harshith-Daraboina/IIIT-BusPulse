@@ -1,5 +1,6 @@
 'use client';
 import Link from 'next/link';
+import Image from 'next/image';
 import { usePathname } from 'next/navigation';
 import {
   BusFront,
@@ -62,12 +63,17 @@ export function Shell({
       {menuOpen && <button className="mobile-scrim" aria-label="Close menu" onClick={() => setMenuOpen(false)} />}
       <header className="site-header" aria-label={`${title} workspace header`}>
         <Link href="/" className="brand">
-          <span className="brand-symbol">
-            <BusFront size={25} strokeWidth={2.2} />
-          </span>
-          <span>
-            IIIT <span className="brand-light">BusPulse</span>
-            <small>IIIT DHARWAD TRANSPORT</small>
+          <Image
+            src="/iiit-logo.png"
+            alt="Indian Institute of Information Technology Dharwad"
+            width={523}
+            height={180}
+            className="brand-logo"
+            priority
+          />
+          <span className="brand-text">
+            <span className="brand-light">BusPulse</span>
+            <small>CAMPUS TRANSPORT</small>
           </span>
         </Link>
         <nav className={`top-navigation ${menuOpen ? 'top-navigation-open' : ''}`} aria-label="Main navigation">

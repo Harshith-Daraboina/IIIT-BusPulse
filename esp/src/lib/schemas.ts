@@ -27,6 +27,17 @@ export const locationSchema = z
   })
   .strict();
 export const tripSchema = z.object({ busId: z.string().min(1).max(64) }).strict();
+export const occupancySchema = z
+  .object({ busId: z.string().min(1).max(64), passengerCount: z.number().int().min(0).max(500) })
+  .strict();
+export const chatQuerySchema = z.object({ busId: z.string().min(1).max(64) });
+export const chatSchema = z
+  .object({
+    busId: z.string().min(1).max(64),
+    name: z.string().trim().min(1).max(40).optional(),
+    body: z.string().trim().min(1).max(300),
+  })
+  .strict();
 export const subscriptionSchema = z
   .object({ stopId: z.string().min(1).max(64), enabled: z.boolean() })
   .strict();

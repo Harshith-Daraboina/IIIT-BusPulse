@@ -10,7 +10,7 @@ export async function getFleet(): Promise<BusInfo[]> {
     include: {
       route: { include: { stops: { orderBy: { sequenceNumber: 'asc' } } } },
       driver: { include: { user: { select: { name: true } } } },
-      trips: { where: { status: 'ACTIVE' }, select: { id: true }, take: 1 },
+      trips: { where: { status: 'ACTIVE' }, select: { id: true, passengerCount: true }, take: 1 },
     },
     orderBy: { busNumber: 'asc' },
   });
@@ -33,6 +33,7 @@ export async function getFleet(): Promise<BusInfo[]> {
       busNumber: bus.busNumber,
       vehicleNumber: bus.vehicleNumber,
       capacity: bus.capacity,
+      passengerCount: bus.trips[0]?.passengerCount ?? null,
       route: bus.route,
       driverName: bus.driver?.user.name ?? 'Unassigned',
       driverPhone: '',

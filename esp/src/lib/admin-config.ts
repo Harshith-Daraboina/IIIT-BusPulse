@@ -106,7 +106,7 @@ export type AdminData = {
 export type Analytics = {
   daily: { day: string; count: number }[];
   routes: { name: string; count: number }[];
-  drivers: { name: string; trips: number; average: number }[];
+  drivers: { name: string; trips: number; average: number; hours: number; km: number }[];
   average: number;
   completed: number;
 };

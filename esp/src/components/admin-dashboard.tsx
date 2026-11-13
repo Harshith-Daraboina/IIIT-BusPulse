@@ -348,7 +348,7 @@ export function AdminDashboard({ view }: { view: AdminEntity | 'overview' | 'his
           </section>
           <section className="data-section" style={{ marginTop: 22 }}>
             <div className="section-heading">
-              <h2>Driver performance</h2>
+              <h2>Driver work report</h2>
               <span className="muted" style={{ fontSize: 10 }}>
                 Last 30 days
               </span>
@@ -359,6 +359,8 @@ export function AdminDashboard({ view }: { view: AdminEntity | 'overview' | 'his
                   <tr>
                     <th>Driver</th>
                     <th>Completed trips</th>
+                    <th>Hours driven</th>
+                    <th>Distance</th>
                     <th>Average trip time</th>
                   </tr>
                 </thead>
@@ -367,6 +369,8 @@ export function AdminDashboard({ view }: { view: AdminEntity | 'overview' | 'his
                     <tr key={driver.name}>
                       <td>{driver.name}</td>
                       <td>{driver.trips}</td>
+                      <td>{driver.hours} hr</td>
+                      <td>{driver.km} km</td>
                       <td>{driver.average} min</td>
                     </tr>
                   ))}
@@ -545,7 +549,7 @@ export function AdminDashboard({ view }: { view: AdminEntity | 'overview' | 'his
                     defaultValue={
                       field.key === 'password'
                         ? ''
-                        : String(editing?.[field.key] ?? (field.type === 'color' ? '#5e1ef4' : ''))
+                        : String(editing?.[field.key] ?? (field.type === 'color' ? '#25408f' : ''))
                     }
                     required={field.required || (field.key === 'password' && !editing)}
                     min={field.min}

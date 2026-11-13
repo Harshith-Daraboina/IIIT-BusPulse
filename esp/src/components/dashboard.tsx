@@ -17,6 +17,7 @@ import {
   Info,
   LocateFixed,
   MapPin,
+  MessageCircle,
   Radio,
   RefreshCw,
   Route,
@@ -30,6 +31,7 @@ import {
 import { Shell } from './shell';
 import { Button } from './ui/button';
 import { Dialog, DialogContent } from './ui/dialog';
+import { DriverChat } from './driver-chat';
 import { AlertInfo, BusInfo, FleetResponse, HistoryItem } from '@/lib/types';
 import { etaMinutes, stopProximity } from '@/lib/geo';
 import { fetchJson } from '@/lib/utils';
@@ -65,6 +67,8 @@ export function Dashboard({ view }: { view: View }) {
   const [filtersOpen, setFiltersOpen] = useState(false);
   const [detailTab, setDetailTab] = useState('stops');
   const [alertDialog, setAlertDialog] = useState(false);
+  const [chatOpen, setChatOpen] = useState(false);
+  const [showMap, setShowMap] = useState(false);
   const [demoSubscriptions, setDemoSubscriptions] = useState<string[]>([]);
   const [demoAlerts, setDemoAlerts] = useState<AlertInfo[]>([]);
   const [localAlertsReady, setLocalAlertsReady] = useState(false);
@@ -217,14 +221,10 @@ export function Dashboard({ view }: { view: View }) {
     >
       <div className="page-heading">
         <div>
-          <div className="eyebrow">
-            <span className="eyebrow-line" />
-            YOUR DAILY COMMUTE, SIMPLIFIED
-          </div>
-          <h1>{view === 'tracking' ? 'Your ride. In real time.' : titles[view]}</h1>
+          <h1>{view === 'tracking' ? 'Where is my bus?' : titles[view]}</h1>
           <p>
             {view === 'tracking'
-              ? 'A little less waiting. Know exactly where your bus is.'
+              ? 'Pick your bus and stop. We will tell you when to leave.'
               : view === 'routes'
                 ? 'Find your route and every stop along the way.'
                 : view === 'history'
@@ -232,26 +232,15 @@ export function Dashboard({ view }: { view: View }) {
                   : 'Be ready when your bus is around the corner.'}
           </p>
         </div>
-        <div className="heading-actions">
-          <span className="today">
-            <Clock3 size={15} />
-            {new Intl.DateTimeFormat('en-IN', {
-              weekday: 'short',
-              day: 'numeric',
-              month: 'short',
-              timeZone: 'Asia/Kolkata',
-            }).format(new Date())}
-          </span>
-          <Button
-            variant="outline"
-            onClick={() => setAlertDialog(true)}
-            disabled={!selected}
-            aria-label="Set arrival alert"
-          >
-            <Bell size={16} />
-            Set arrival alert
-          </Button>
-        </div>
+        <span className="today">
+          <Clock3 size={15} />
+          {new Intl.DateTimeFormat('en-IN', {
+            weekday: 'short',
+            day: 'numeric',
+            month: 'short',
+            timeZone: 'Asia/Kolkata',
+          }).format(new Date())}
+        </span>
       </div>
       {fleet.error && (
         <div className="error-banner">
@@ -263,48 +252,53 @@ export function Dashboard({ view }: { view: View }) {
           </Button>
         </div>
       )}
-      <section className="stats-grid" aria-label="Transport overview">
-        <Stat
-          label="Buses on the road"
-          value={fleet.isPending ? '—' : String(activeBuses.length).padStart(2, '0')}
-          icon={<BusFront size={21} />}
-          note={
-            <>
-              <span className="live-dot" />
-              {buses.length} buses in your campus fleet
-            </>
-          }
-          accent="green"
-        />
-        <Stat
-          label="Routes connecting you"
-          value={fleet.isPending ? '—' : String(routes.length).padStart(2, '0')}
-          icon={<Route size={21} />}
-          note={
-            <>
-              <MapPin size={13} />
-              Across Hubballi & Dharwad
-            </>
-          }
-          accent="blue"
-        />
-        <Stat
-          label="Your next arrival"
-          value={eta === null ? '—' : eta === 0 ? 'Now' : String(eta).padStart(2, '0')}
-          suffix={eta !== null && eta > 0 ? 'min' : ''}
-          icon={<Clock3 size={21} />}
-          note={
-            <>
-              {selectedStop?.stopName ?? 'Choose a bus'}
-              <span className="stat-note-arrow">
-                {selected && `Bus ${selected.busNumber}`}
-                <ArrowUpRight size={13} />
-              </span>
-            </>
-          }
-          accent="amber"
-        />
-      </section>
+      {view === 'tracking' && selected && (
+        <section className="ride-card" aria-label="Your ride">
+          <div className="ride-main">
+            <small>YOUR NEXT BUS</small>
+            <div className="ride-eta">
+              {eta === null ? '—' : eta === 0 ? 'Now' : eta}
+              {eta !== null && eta > 0 && <span>min</span>}
+            </div>
+            <p>
+              Bus {selected.busNumber} · {statusText[selected.status]}
+              {selectedStop && ` · to ${selectedStop.stopName}`}
+            </p>
+          </div>
+          <div className="ride-controls">
+            <label>
+              <span>Bus</span>
+              <select value={selected.id} onChange={(event) => selectBus(event.target.value)}>
+                {buses.map((bus) => (
+                  <option key={bus.id} value={bus.id}>
+                    Bus {bus.busNumber} · {bus.route.source} to {bus.route.destination}
+                  </option>
+                ))}
+              </select>
+            </label>
+            <label>
+              <span>Your stop</span>
+              <select value={effectiveStopId} onChange={(event) => setStopId(event.target.value)}>
+                {selected.route.stops.map((stop) => (
+                  <option key={stop.id} value={stop.id}>
+                    {stop.stopName}
+                  </option>
+                ))}
+              </select>
+            </label>
+          </div>
+          <div className="ride-actions">
+            <Button onClick={() => setAlertDialog(true)}>
+              <Bell size={16} />
+              Notify me
+            </Button>
+            <Button variant="outline" onClick={() => setChatOpen(true)}>
+              <MessageCircle size={16} />
+              Chat with driver
+            </Button>
+          </div>
+        </section>
+      )}
       {view === 'tracking' && (
         <>
           <section className="tracking-section">
@@ -315,6 +309,10 @@ export function Dashboard({ view }: { view: View }) {
                 <span className="count-badge">{activeBuses.length} active</span>
               </div>
               <div className="refresh-caption">
+                <button className="map-toggle" onClick={() => setShowMap(!showMap)}>
+                  <MapPin size={14} />
+                  {showMap ? 'Hide map' : 'Show map'}
+                </button>
                 <span className="live-dot" />
                 Auto-updating every 3s
                 <button
@@ -327,7 +325,7 @@ export function Dashboard({ view }: { view: View }) {
                 </button>
               </div>
             </div>
-            <div className="tracking-workspace">
+            <div className={`tracking-workspace ${showMap ? '' : 'no-map'}`}>
               <div className="bus-list-panel">
                 <div className="bus-list-head">
                   <strong>
@@ -414,17 +412,18 @@ export function Dashboard({ view }: { view: View }) {
                   {demo ? 'Demo fleet · Simulated locations' : 'Verified college transportation'}
                 </div>
               </div>
-              {selected ? (
-                <BusMap
-                  buses={buses}
-                  selected={selected}
-                  stopId={effectiveStopId}
-                  onSelect={selectBus}
-                  onStop={setStopId}
-                />
-              ) : (
-                <div className="map-placeholder skeleton" />
-              )}
+              {showMap &&
+                (selected ? (
+                  <BusMap
+                    buses={buses}
+                    selected={selected}
+                    stopId={effectiveStopId}
+                    onSelect={selectBus}
+                    onStop={setStopId}
+                  />
+                ) : (
+                  <div className="map-placeholder skeleton" />
+                ))}
             </div>
           </section>
           {selected && (
@@ -523,6 +522,33 @@ export function Dashboard({ view }: { view: View }) {
                     </strong>
                   </div>
                   <div>
+                    <small>STUDENTS ON BOARD</small>
+                    {selected.passengerCount === null ? (
+                      <strong>Not active</strong>
+                    ) : (
+                      <>
+                        <strong>
+                          {selected.passengerCount} / {selected.capacity}
+                          {selected.passengerCount >= selected.capacity && ' · Full'}
+                        </strong>
+                        <span className="occupancy-meter">
+                          <i
+                            style={{
+                              width: `${Math.min(100, (selected.passengerCount / Math.max(1, selected.capacity)) * 100)}%`,
+                            }}
+                          />
+                        </span>
+                      </>
+                    )}
+                  </div>
+                  <div>
+                    <small>MESSAGE THE DRIVER</small>
+                    <Button variant="outline" size="sm" onClick={() => setChatOpen(true)}>
+                      <MessageCircle size={15} />
+                      Chat with driver
+                    </Button>
+                  </div>
+                  <div>
                     <small>LAST GPS UPDATE</small>
                     <strong>
                       {selected.location
@@ -534,6 +560,7 @@ export function Dashboard({ view }: { view: View }) {
               )}
             </section>
           )}
+          {selected && <DriverChat bus={selected} open={chatOpen} onOpenChange={setChatOpen} />}
           <div className="commute-note">
             <span className="note-spark">
               <Sparkles size={17} />

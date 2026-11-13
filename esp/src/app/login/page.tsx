@@ -3,7 +3,8 @@ import { useState } from 'react';
 import { signIn } from 'next-auth/react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
-import { ArrowRight, BusFront, Eye, EyeOff, LockKeyhole, Mail } from 'lucide-react';
+import Image from 'next/image';
+import { ArrowRight, Eye, EyeOff, LockKeyhole, Mail } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 export default function LoginPage() {
   const router = useRouter();
@@ -36,11 +37,16 @@ export default function LoginPage() {
   return (
     <main className="login-page">
       <Link href="/" className="brand login-brand">
-        <span className="brand-symbol">
-          <BusFront size={25} />
-        </span>
-        <span>
-          IIIT <span className="brand-light">BusPulse</span>
+        <Image
+          src="/iiit-logo.png"
+          alt="Indian Institute of Information Technology Dharwad"
+          width={523}
+          height={180}
+          className="brand-logo"
+          priority
+        />
+        <span className="brand-text">
+          <span className="brand-light">BusPulse</span>
         </span>
       </Link>
       <div className="login-layout">

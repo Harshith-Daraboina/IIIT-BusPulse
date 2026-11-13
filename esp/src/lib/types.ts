@@ -27,6 +27,7 @@ export type BusInfo = {
   busNumber: string;
   vehicleNumber: string;
   capacity: number;
+  passengerCount: number | null;
   route: RouteInfo;
   driverName: string;
   driverPhone: string;
@@ -43,8 +44,16 @@ export type HistoryItem = {
   startTime: string;
   endTime: string | null;
   status: string;
+  distanceKm?: number;
 };
 export type AlertInfo = { id: string; message: string; read: boolean; createdAt: string };
+export type ChatMessageInfo = {
+  id: string;
+  sender: 'STUDENT' | 'DRIVER';
+  senderName: string;
+  body: string;
+  createdAt: string;
+};
 export const COLLEGE = {
   name: 'IIIT Dharwad',
   latitude: 15.3919083,

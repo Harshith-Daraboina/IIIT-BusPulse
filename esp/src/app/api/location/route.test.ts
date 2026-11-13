@@ -10,6 +10,7 @@ const mocks = vi.hoisted(() => ({
   subscriptions: vi.fn(),
   notifications: vi.fn(),
   transaction: vi.fn(),
+  distance: vi.fn(),
 }));
 vi.mock('@/lib/access', () => ({ requireDriver: mocks.requireDriver }));
 vi.mock('@/lib/db', () => ({
@@ -50,7 +51,7 @@ beforeEach(() => {
   mocks.subscriptions.mockResolvedValue([{ userId: 'STUDENT001' }]);
   mocks.transaction.mockImplementation(async (callback) =>
     callback({
-      trip: { updateMany: mocks.sample },
+      trip: { updateMany: mocks.sample, update: mocks.distance },
       locationHistory: { create: mocks.history },
       stopArrival: { upsert: mocks.arrival },
       subscription: { findMany: mocks.subscriptions },
@@ -104,6 +105,18 @@ describe('GPS ingestion', () => {
       expect.objectContaining({ tripId: 'TRIP001', latitude: 15.3693 }),
       { ex: 90 },
     );
+  });
+  it('adds the distance travelled since the previous fix to the trip', async () => {
+    mocks.cached.mockResolvedValue({
+      tripId: 'TRIP001',
+      latitude: 15.3693,
+      longitude: 75.1219,
+      updatedAt: new Date(Date.now() - 10_000).toISOString(),
+    });
+    await POST(request());
+    const increment = mocks.distance.mock.calls[0][0].data.distanceKm.increment;
+    expect(increment).toBeGreaterThan(0.015);
+    expect(increment).toBeLessThan(0.03);
   });
   it('does not persist history between 60-second sampling slots', async () => {
     mocks.sample.mockResolvedValue({ count: 0 });
